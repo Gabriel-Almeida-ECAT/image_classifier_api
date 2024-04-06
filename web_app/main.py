@@ -49,9 +49,9 @@ class user(Resource):
 				msg = f'User don\'t exist'
 				ret_code = 404
 
-		return gen_response(
-			ret_json={'msg': msg},
-			ret_status=ret_code)
+			return gen_response( 
+				ret_json={'msg': msg},
+				ret_status=ret_code)
 
 
 		def post(self, user_id):
@@ -231,7 +231,6 @@ class promote2adm(Resource):
 
 class demoteAdm(Resource):
 	def post(self):
-		def post(self):
 		usr_id = posted_data["usr_id"]
 		root_adm_pwd = posted_data["adm_pwd"]
 

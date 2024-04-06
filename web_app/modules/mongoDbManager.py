@@ -66,7 +66,7 @@ class MongoDb:
 		if not auth_resp['auth']:
 			return auth_resp
 
-		first_update = (last_updt := self.users_col.find_one({"user_id": user_id}, {"_id":0, "last_modified":1})) is None:
+		first_update = (last_updt := self.users_col.find_one({"user_id": user_id}, {"_id":0, "last_modified":1})) is None
 
 		one_day = timedelta(days=1)
 		if not first_update and (time_since_last_update := datetime.now() - last_updt) < one_day:
@@ -191,4 +191,6 @@ class MongoDb:
 
 if __name__ == '__main__':
 	# execute debug comands here
-	pass
+	mongoDb = MongoDb("mongodb://127.0.0.1:27017")
+	print(mongoDb.db.list_collection_names())
+	del mongoDb	
