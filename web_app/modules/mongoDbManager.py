@@ -23,7 +23,7 @@ class MongoDb:
 		self.admin_col = self.db["admin"]
 
 		if self.admin_col.find_one({"user_id": 'root_admin'}) == None:
-			self.users_col.insert_one({
+			self.admin_col.insert_one({
 				"user_id": 'root_admin',
 				"password": admin_init_pwd,
 				"initial_pwd": True
@@ -66,7 +66,8 @@ class MongoDb:
 		if not auth_resp['auth']:
 			return auth_resp
 
-		first_update = (last_updt := self.users_col.find_one({"user_id": user_id}, {"_id":0, "last_modified":1})) is None
+		first_update = (last_updt := self.users_col.find_one({"user_id": usr_id}, 
+			{"_id":0, "last_modified":1}).get("last_modified")) is None # important to use '.get' as key could not exist
 
 		one_day = timedelta(days=1)
 		if not first_update and (time_since_last_update := datetime.now() - last_updt) < one_day:
@@ -74,7 +75,7 @@ class MongoDb:
 			return {'msg': f"User {usr_id} need to wait {hours_2_valid_2_update} before allowed to another update.", 
 					'resp_code': 405}
 
-		self.users_col.update_one({"user_id": user_id},
+		self.users_col.update_one({"user_id": usr_id},
 			{"$set": {
 				"password": new_pwd,
 				"last_modified": datetime.now()
@@ -95,7 +96,7 @@ class MongoDb:
 			return {'err_msg': "User not registered", 'auth': False, 'resp_code': 404}
 
 		else:
-			stored_hspwd = self.users_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})
+			stored_hspwd = self.users_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})["password"]
 
 			if check_enc_pwds(passed_pwd=usr_pwd, stored_hspwd=stored_hspwd):
 				return {'err_msg': None, 'auth': True, 'resp_code': 200}
@@ -104,7 +105,7 @@ class MongoDb:
 
 
 	def getNumTokens(self, user_id):
-		return int(self.users_col.find_one({"user_id": user_id}, {"_id":0, "tokens":1}))
+		return int(self.users_col.find_one({"user_id": user_id}, {"_id":0, "tokens":1}))["tokens"]
 
 
 	def add2usrTokens(self, user_id, num_add):
@@ -113,13 +114,18 @@ class MongoDb:
 		)
 	
 
-	#create function to validate admin()
+	def isAdm(self, user_id):
+		if self.adm_col.find_one({"user_id": user_id}) is not None:
+			return True
+		return False
+
+
 	def authAdm(self, user_id, adm_pwd):
 		is_adm = True if self.adm_col.find_one({"user_id": user_id}) is not None else False
 		if not is_adm:
 			return {'resp_code': 403, 'auth': False, 'err_msg': "User not registered as admin"}
 		
-		hs_stored_pwd = self.adm_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})
+		hs_stored_pwd = self.adm_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})["password"]
 		if hs_stored_pwd == admin_init_pwd:
 			return {'resp_code': 401, 'auth': False, 'err_msg': "Invalid: initial admin password"}
 

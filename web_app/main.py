@@ -33,11 +33,11 @@ class userCreate(Resource):
 			user_id = posted_data["username"]
 			pwd = posted_data["password"]
 
-			ret_resp = mongoDb.deleteUser(user_id, pwd)
+			ret_resp = mongoDb.registerUser(user_id, pwd)
 
 			return gen_response(
 				ret_json={'msg': ret_resp['msg']},
-				ret_status=ret_resp['resp_code'])
+				ret_status=ret_resp['resp_code'])	
 
 
 class user(Resource):
@@ -71,14 +71,15 @@ class user(Resource):
 		def delete(self, user_id):
 			posted_data = request.get_json()
 
-			#user_id = posted_data["username"]
+			user_id = posted_data["username"]
 			pwd = posted_data["password"]
 
-			ret_resp = mongoDb.registerUser(user_id, pwd)
+			ret_resp = mongoDb.deleteUser(user_id, pwd)
 
 			return gen_response(
 				ret_json={'msg': ret_resp['msg']},
-				ret_status=ret_resp['resp_code'])		
+				ret_status=ret_resp['resp_code'])
+	
 
 
 class classify(Resource):
@@ -223,7 +224,7 @@ class promote2adm(Resource):
 				ret_json={'msg': auth_resp['err_msg']},
 				ret_status=auth_resp['resp_code'])
 		
-		elif auth_resp_adm['auth']:
+		elif auth_resp_adm['auth'] and not mongoDb.isAdm(usr_id):
 			resp = mongoDb.promote2adm(usr_id)
 			return gen_response(ret_json={'msg': resp['msg']},
 								ret_status=resp['resp_code'])
@@ -247,29 +248,15 @@ class demoteAdm(Resource):
 
 
 
-api.add_resource(user, '/user/<string:usr_id>')
 api.add_resource(userCreate, '/user/create')
+api.add_resource(user, '/user/<string:user_id>')
 api.add_resource(classify, '/classify/')
-api.add_resource(refill, '/user/refill/')
+api.add_resource(refill, '/admin/refill/')
 api.add_resource(rootAdminInitialPassword, '/admin/rootAdmInitialPassword')
 api.add_resource(promote2adm, '/admin/promoteToAdmin/<string:usr_id>')
 api.add_resource(demoteAdm, '/admin/demoteFromAdmin/<string:usr_id>')
 api.add_resource(deleteCachedUrl, '/admin/deleteCachedUrl')
 
-
-# cehck other rest api for routing and pagination examples [v]
-
-# functions to delete/update users [v]
-
-# put user id argment passing in route link [v]
-
-# stablish admin routes [v]
-
-# finish admin crud operations [v]
-
-# create postman test collection []
-
-# release
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=5000)
