@@ -42,24 +42,32 @@ class userCreate(Resource):
 
 class user(Resource):
 		def get(self, user_id):
-			if mongoDb.userExist(user_id):
-				msg = f'Number of tokens: {getNumTokens(user_id)}'
-				ret_code = 200
-			else:
-				msg = f'User don\'t exist'
-				ret_code = 404
+			posted_data = request.get_json()
+			
+			pwd = posted_data["password"]
+
+			auth_resp = mongoDb.authUser(user_id, pwd)
+			if not auth_resp['auth']:
+				return gen_response(
+					ret_json={'msg': auth_resp['err_msg']},
+					ret_status=auth_resp['resp_code'])
 
 			return gen_response( 
-				ret_json={'msg': msg},
-				ret_status=ret_code)
+				ret_json={'msg': f'Number of tokens: {mongoDb.getNumTokens(user_id)}'},
+				ret_status=200)
 
 
 		def post(self, user_id):
 			posted_data = request.get_json()
 
-			#user_id = posted_data["username"]
 			pwd = posted_data["password"]
 			new_pwd = posted_data["new_password"]
+
+			auth_resp = mongoDb.authUser(user_id, pwd)
+			if not auth_resp['auth']:
+				return gen_response(
+					ret_json={'msg': auth_resp['err_msg']},
+					ret_status=auth_resp['resp_code'])
 
 			ret_resp = mongoDb.updateUserPwd(user_id, pwd, new_pwd)
 
@@ -71,8 +79,13 @@ class user(Resource):
 		def delete(self, user_id):
 			posted_data = request.get_json()
 
-			user_id = posted_data["username"]
 			pwd = posted_data["password"]
+
+			auth_resp = mongoDb.authUser(user_id, pwd)
+			if not auth_resp['auth']:
+				return gen_response(
+					ret_json={'msg': auth_resp['err_msg']},
+					ret_status=auth_resp['resp_code'])
 
 			ret_resp = mongoDb.deleteUser(user_id, pwd)
 

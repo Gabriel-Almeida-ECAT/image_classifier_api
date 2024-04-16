@@ -57,27 +57,25 @@ class MongoDb:
 			return auth_resp
 
 		else:
-			if self.users_col.delete_one({"user_id": user_id}) is not None:
+			if self.users_col.delete_one({"user_id": usr_id}) is not None:
 				return {'msg': f"User {usr_id} deleted successfully.", 'resp_code': 200}
 
 
 	def updateUserPwd(self, usr_id, usr_pwd, new_pwd):
-		auth_resp = self.authUser(usr_id, usr_pwd)
-		if not auth_resp['auth']:
-			return auth_resp
-
 		first_update = (last_updt := self.users_col.find_one({"user_id": usr_id}, 
 			{"_id":0, "last_modified":1}).get("last_modified")) is None # important to use '.get' as key could not exist
 
 		one_day = timedelta(days=1)
 		if not first_update and (time_since_last_update := datetime.now() - last_updt) < one_day:
-			hours_2_valid_2_update = one_day - time_since_last_update
-			return {'msg': f"User {usr_id} need to wait {hours_2_valid_2_update} before allowed to another update.", 
+			hours_4_allow_update = one_day - time_since_last_update
+			str_hours_4_allow_update = ':'.join(str(hours_4_allow_update).split(':')[:2])
+			return {'msg': f"User {usr_id} need to wait {str_hours_4_allow_update} before allowed to update again.", 
 					'resp_code': 405}
 
+		new_hashed_pwd = bcrypt.hashpw(new_pwd.encode('utf8'), bcrypt.gensalt())
 		self.users_col.update_one({"user_id": usr_id},
 			{"$set": {
-				"password": new_pwd,
+				"password": new_hashed_pwd,
 				"last_modified": datetime.now()
 			}}
 		)
@@ -105,7 +103,7 @@ class MongoDb:
 
 
 	def getNumTokens(self, user_id):
-		return int(self.users_col.find_one({"user_id": user_id}, {"_id":0, "tokens":1}))["tokens"]
+		return int(self.users_col.find_one({"user_id": user_id}, {"_id":0, "tokens":1})["tokens"])
 
 
 	def add2usrTokens(self, user_id, num_add):
@@ -198,5 +196,21 @@ class MongoDb:
 if __name__ == '__main__':
 	# execute debug comands here
 	mongoDb = MongoDb("mongodb://127.0.0.1:27017")
+	
 	print(mongoDb.db.list_collection_names())
-	del mongoDb	
+
+	'''one_day = timedelta(days=1)
+				print(f"One day: {one_day}")
+				last_updt = mongoDb.users_col.find_one({"user_id": 'user_test_1'}, {"_id":0, "last_modified":1}).get("last_modified")
+				time_since_last_update = datetime.now() - last_updt
+				print(f"time_since_last_update: {time_since_last_update}")
+				print(f"time_since_last_update < one_day: { time_since_last_update < one_day}")
+				hours_4_allow_update = one_day - time_since_last_update
+				print(f"hours_4_allow_update: {hours_4_allow_update}")
+				str_hours_4_allow_update = ':'.join(str(hours_4_allow_update).split(':')[:2])
+				print(f"in string form: {str_hours_4_allow_update}")'''
+
+	ret_resp = mongoDb.updateUserPwd('user_test_1', '1234', 'new_pwd')
+	print(ret_resp)
+
+	del mongoDb
