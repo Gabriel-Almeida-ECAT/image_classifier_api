@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request, Response, json
 from flask_restful import Api, Resource
 
 
-valid_img_formats = ['jpg', 'png', 'webp']
+valid_img_formats = ['jpg', 'jpeg', 'png', 'webp']
 
 
 def genResponse(ret_json, ret_status):
@@ -15,9 +15,19 @@ def genResponse(ret_json, ret_status):
 	)
 
 
-def validate_body_content(list_contents):
-	pass
+def validateBodyContent(body, expected_content):
+	missing_content = []
+	for expected_item in expected_content:
+		if expected_item not in body.keys():
+			missing_content.append(expected_item)
 
+	if not missing_content:
+		return {'validation': True}
+	
+	elif len(missing_content) > 0:
+		missing_content_str = "Missing argument: " + ", ".join(body_validation['Missing'])
+		return {'validation': False, 'msg': missing_content_str, 'missing': missing_content}
+	
 
 def validateImgUrl(url):
 	parsed_url = urlparse(url)

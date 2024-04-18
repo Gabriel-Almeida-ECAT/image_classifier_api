@@ -28,84 +28,110 @@ pretrained_model = InceptionV3(weights="imagenet")
 
 class userCreate(Resource):
 	def post(self):
-			posted_data = request.get_json()
+		posted_data = request.get_json()
 
+		expected_content = ["username", "password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+
+		elif body_validation['validation']:
 			user_id = posted_data["username"]
 			pwd = posted_data["password"]
 
-			ret_resp = mongoDb.registerUser(user_id, pwd)
+		ret_resp = mongoDb.registerUser(user_id, pwd)
 
-			return genResponse(
-				ret_json={'msg': ret_resp['msg']},
-				ret_status=ret_resp['resp_code'])	
+		return genResponse(
+			ret_json={'msg': ret_resp['msg']},
+			ret_status=ret_resp['resp_code'])
 
 
 class user(Resource):
-		def get(self, user_id):
-			posted_data = request.get_json()
-			
+	def get(self, user_id):
+		posted_data = request.get_json()
+		
+		expected_content = ["password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+
+		elif body_validation['validation']:
 			pwd = posted_data["password"]
 
-			auth_resp = mongoDb.authUser(user_id, pwd)
-			if not auth_resp['auth']:
-				return genResponse(
-					ret_json={'msg': auth_resp['err_msg']},
-					ret_status=auth_resp['resp_code'])
+		auth_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_resp['auth']:
+			return genResponse(
+				ret_json={'msg': auth_resp['err_msg']},
+				ret_status=auth_resp['resp_code'])
 
-			return genResponse( 
-				ret_json={'msg': f'Number of tokens: {mongoDb.getNumTokens(user_id)}'},
-				ret_status=200)
+		num_tokens = mongoDb.getNumTokens(user_id)
+		return genResponse( 
+			ret_json={'msg': f'Number of tokens: {num_tokens}', 'num': num_tokens},
+			ret_status=200)
 
 
-		def post(self, user_id):
-			posted_data = request.get_json()
+	def post(self, user_id):
+		posted_data = request.get_json()
 
+		expected_content = ["password", "new_password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+		
+		elif body_validation['validation']:
 			pwd = posted_data["password"]
 			new_pwd = posted_data["new_password"]
 
-			auth_resp = mongoDb.authUser(user_id, pwd)
-			if not auth_resp['auth']:
-				return genResponse(
-					ret_json={'msg': auth_resp['err_msg']},
-					ret_status=auth_resp['resp_code'])
-
-			ret_resp = mongoDb.updateUserPwd(user_id, pwd, new_pwd)
-
+		auth_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_resp['auth']:
 			return genResponse(
-				ret_json={'msg': ret_resp['msg']},
-				ret_status=ret_resp['resp_code'])
+				ret_json={'msg': auth_resp['err_msg']},
+				ret_status=auth_resp['resp_code'])
+
+		ret_resp = mongoDb.updateUserPwd(user_id, pwd, new_pwd)
+
+		return genResponse(
+			ret_json={'msg': ret_resp['msg']},
+			ret_status=ret_resp['resp_code'])
 
 
-		def delete(self, user_id):
-			posted_data = request.get_json()
+	def delete(self, user_id):
+		posted_data = request.get_json()
 
+		expected_content = ["password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+		
+		elif body_validation['validation']:
 			pwd = posted_data["password"]
 
-			auth_resp = mongoDb.authUser(user_id, pwd)
-			if not auth_resp['auth']:
-				return genResponse(
-					ret_json={'msg': auth_resp['err_msg']},
-					ret_status=auth_resp['resp_code'])
-
-			ret_resp = mongoDb.deleteUser(user_id, pwd)
-
+		auth_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_resp['auth']:
 			return genResponse(
-				ret_json={'msg': ret_resp['msg']},
-				ret_status=ret_resp['resp_code'])
+				ret_json={'msg': auth_resp['err_msg']},
+				ret_status=auth_resp['resp_code'])
+
+		ret_resp = mongoDb.deleteUser(user_id, pwd)
+
+		return genResponse(
+			ret_json={'msg': ret_resp['msg']},
+			ret_status=ret_resp['resp_code'])
 	
 
 class classify(Resource):
 	def post(self):
 		posted_data = request.get_json()
 
-		user_id = posted_data["username"]
-		pwd = posted_data["password"]
-		url = posted_data["url"]
+		expected_content = ["username", "password", "url"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
 
-		if not url or not pwd or not user_id:
-			return genResponse(
-				ret_json={'msg': "Missing argument."},
-				ret_status=400) # 400 Bad Request
+		elif body_validation['validation']:
+			user_id = posted_data["username"]
+			pwd = posted_data["password"]
+			url = posted_data["url"]
 
 		if not validateImgUrl(url):
 			return genResponse(
@@ -129,6 +155,7 @@ class classify(Resource):
 			if cached_url_result is not None:
 				ret_json = cached_url_result
 				ret_json['remaining_tokens'] = num_tokens - 1
+				ret_json['cached_url'] = True
 
 			else:
 				urllib.request.urlretrieve(url,"img.jpg")
@@ -144,8 +171,10 @@ class classify(Resource):
 				prediction = pretrained_model.predict(img_array)
 				actual_prediction = imagenet_utils.decode_predictions(prediction, top=5)
 
-				ret_json = {str(pred[1]): float(pred[2]) for pred in actual_prediction[0]}
+				predictions = {str(pred[1]): float(pred[2]) for pred in actual_prediction[0]}
+				ret_json = {'predictions': predictions}
 				mongoDb.cacheUrlResult(url, ret_json)
+				ret_json['cached_url'] = False
 
 			mongoDb.add2usrTokens(user_id, -1)
 			ret_json['remaining_tokens'] = num_tokens - 1 # avoid another call to db
