@@ -7,7 +7,7 @@ from flask_restful import Api, Resource
 valid_img_formats = ['jpg', 'png', 'webp']
 
 
-def gen_response(ret_json, ret_status):
+def genResponse(ret_json, ret_status):
 	return Response(
 		response=json.dumps(ret_json),
 		status=ret_status,
@@ -19,7 +19,7 @@ def validate_body_content(list_contents):
 	pass
 
 
-def validate_url_img(url):
+def validateImgUrl(url):
 	parsed_url = urlparse(url)
 	img_format = parsed_url.path.split('.')[-1]
 	

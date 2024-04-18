@@ -41,7 +41,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"password\": \"1234\",\n    \"new_password\": \"aaaaa\"\n}",
+					"raw": "{\n    \"password\": \"new_123\",\n    \"new_password\": \"aaaa\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -128,7 +128,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"user1\",\n    \"password\": \"123\",\n    \"url\": \"https://smallboatsmonthly.com/wp-content/uploads/2023/01/1109216_cmyk.jpg\"\n}",
+					"raw": "{\n    \"username\": \"user_test_1\",\n    \"password\": \"123\",\n    \"url\": \"https://img.freepik.com/fotos-gratis/gatinho-domestico-fofo-senta-na-janela-olhando-para-fora-da-ia-generativa_188544-12519.jpg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -136,11 +136,11 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:5050/classify",
+					"raw": "localhost:5000/classify",
 					"host": [
 						"localhost"
 					],
-					"port": "5050",
+					"port": "5000",
 					"path": [
 						"classify"
 					]

@@ -35,7 +35,7 @@ class userCreate(Resource):
 
 			ret_resp = mongoDb.registerUser(user_id, pwd)
 
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': ret_resp['msg']},
 				ret_status=ret_resp['resp_code'])	
 
@@ -48,11 +48,11 @@ class user(Resource):
 
 			auth_resp = mongoDb.authUser(user_id, pwd)
 			if not auth_resp['auth']:
-				return gen_response(
+				return genResponse(
 					ret_json={'msg': auth_resp['err_msg']},
 					ret_status=auth_resp['resp_code'])
 
-			return gen_response( 
+			return genResponse( 
 				ret_json={'msg': f'Number of tokens: {mongoDb.getNumTokens(user_id)}'},
 				ret_status=200)
 
@@ -65,13 +65,13 @@ class user(Resource):
 
 			auth_resp = mongoDb.authUser(user_id, pwd)
 			if not auth_resp['auth']:
-				return gen_response(
+				return genResponse(
 					ret_json={'msg': auth_resp['err_msg']},
 					ret_status=auth_resp['resp_code'])
 
 			ret_resp = mongoDb.updateUserPwd(user_id, pwd, new_pwd)
 
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': ret_resp['msg']},
 				ret_status=ret_resp['resp_code'])
 
@@ -83,17 +83,16 @@ class user(Resource):
 
 			auth_resp = mongoDb.authUser(user_id, pwd)
 			if not auth_resp['auth']:
-				return gen_response(
+				return genResponse(
 					ret_json={'msg': auth_resp['err_msg']},
 					ret_status=auth_resp['resp_code'])
 
 			ret_resp = mongoDb.deleteUser(user_id, pwd)
 
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': ret_resp['msg']},
 				ret_status=ret_resp['resp_code'])
 	
-
 
 class classify(Resource):
 	def post(self):
@@ -104,23 +103,23 @@ class classify(Resource):
 		url = posted_data["url"]
 
 		if not url or not pwd or not user_id:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': "Missing argument."},
 				ret_status=400) # 400 Bad Request
 
-		if not validate_img_url(url):
-			return gen_response(
+		if not validateImgUrl(url):
+			return genResponse(
 				ret_json={'msg': "Invalid Url"},
 				ret_status=415) # 415 Unsupported Media Type
 
 		auth_resp = mongoDb.authUser(user_id, pwd)
 		if not auth_resp['auth']:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': auth_resp['err_msg']},
 				ret_status=auth_resp['resp_code'])
 
 		elif (num_tokens := mongoDb.getNumTokens(user_id)) <= 0:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': "Not enough tokens"},
 				ret_status=403) # 403 Forbidden
 
@@ -129,6 +128,7 @@ class classify(Resource):
 			
 			if cached_url_result is not None:
 				ret_json = cached_url_result
+				ret_json['remaining_tokens'] = num_tokens - 1
 
 			else:
 				urllib.request.urlretrieve(url,"img.jpg")
@@ -150,7 +150,7 @@ class classify(Resource):
 			mongoDb.add2usrTokens(user_id, -1)
 			ret_json['remaining_tokens'] = num_tokens - 1 # avoid another call to db
 
-			return gen_response(
+			return genResponse(
 				ret_json=ret_json,
 				ret_status=200)
 
@@ -164,23 +164,23 @@ class refill(Resource):
 		refill_amt = int(posted_data["refill"])
 
 		if not isinstance(refill_amt, int):
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': f"Error, invalid argument '{refill_amt}', expected integer."},
 				ret_status=304)
 
 		elif not mongoDb.userExist(user_id):
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': f"Useramer {user_id} not found."},
 				ret_status=400)
 
 		auth_resp_adm = authAdm(user_id, adm_pwd)
 		if not auth_resp_adm['auth']:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': auth_resp_adm['err_msg']},
 				ret_status=auth_resp['resp_code'])
 
 		mongoDb.add2usrTokens(user_id, refill_amt)
-		return gen_response(
+		return genResponse(
 				ret_json={'msg': f"Refill successful, {refill_amt} tokens added for user {user_id}."},
 				ret_status=200)
 
@@ -197,13 +197,13 @@ class rootAdminInitialPassword(Resource):
 		'''
 		print(new_pwd)
 		if not new_pwd:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': "Missing argument."},
 				ret_status=400)
 
 		reponse = mongoDb.rootAdmFirstPwd(new_pwd)
 
-		return gen_response(
+		return genResponse(
 			ret_json={'msg': response['msg']},
 			ret_status=reponse['resp_code'])
 
@@ -216,13 +216,13 @@ class deleteCachedUrl(Resource):
 
 		resp_auth_adm = mongoDb.authAdm(adm_id, adm_pwd)
 		if not resp_auth_adm['auth']:
-			return gen_response(
+			return genResponse(
 					ret_json={'msg': resp_auth_adm['msg']},
 					ret_status=resp_auth_adm['resp_code'])
 
 		else:
 			dlt_resp = mongoDb.deleteCachedUrl(adm_id, adm_pwd)
-			return gen_response(ret_json={'msg': dlt_resp['msg']},
+			return genResponse(ret_json={'msg': dlt_resp['msg']},
 								ret_status=dlt_resp['resp_code'])
 
 
@@ -233,13 +233,13 @@ class promote2adm(Resource):
 
 		auth_resp = authAdm('root_admin', root_adm_pwd)
 		if not auth_resp['auth']:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': auth_resp['err_msg']},
 				ret_status=auth_resp['resp_code'])
 		
 		elif auth_resp_adm['auth'] and not mongoDb.isAdm(usr_id):
 			resp = mongoDb.promote2adm(usr_id)
-			return gen_response(ret_json={'msg': resp['msg']},
+			return genResponse(ret_json={'msg': resp['msg']},
 								ret_status=resp['resp_code'])
 
 
@@ -250,15 +250,14 @@ class demoteAdm(Resource):
 
 		auth_resp = authAdm('root_admin', root_adm_pwd)
 		if not auth_resp['auth']:
-			return gen_response(
+			return genResponse(
 				ret_json={'msg': auth_resp['err_msg']},
 				ret_status=auth_resp['resp_code'])
 		
 		elif auth_resp_adm['auth']:
 			resp = mongoDb.demoteAdm(usr_id)
-			return gen_response(ret_json={'msg': resp['msg']},
+			return genResponse(ret_json={'msg': resp['msg']},
 								ret_status=resp['resp_code'])
-
 
 
 api.add_resource(userCreate, '/user/create')

@@ -168,18 +168,14 @@ class MongoDb:
 
 
 	def getCachedUrlResult(self, url):
-		predictions = self.cached_urls_col.find_one({"url": url}, {"_id": 0, "predictions": 1})
-		if found_url == None:
-			return None
-		else:
-			return predictions
+		return self.cached_urls_col.find_one({"url": url}, {"_id": 0, "predictions": 1})
 
 
 	def cacheUrlResult(self, url, predictions):
 		self.cached_urls_col.insert_one({
 				"url": url,
 				"cached_datetime": datetime.now(),
-				"predictions": {predictions}
+				"predictions": predictions
 			})
 
 
@@ -198,17 +194,6 @@ if __name__ == '__main__':
 	mongoDb = MongoDb("mongodb://127.0.0.1:27017")
 	
 	print(mongoDb.db.list_collection_names())
-
-	'''one_day = timedelta(days=1)
-				print(f"One day: {one_day}")
-				last_updt = mongoDb.users_col.find_one({"user_id": 'user_test_1'}, {"_id":0, "last_modified":1}).get("last_modified")
-				time_since_last_update = datetime.now() - last_updt
-				print(f"time_since_last_update: {time_since_last_update}")
-				print(f"time_since_last_update < one_day: { time_since_last_update < one_day}")
-				hours_4_allow_update = one_day - time_since_last_update
-				print(f"hours_4_allow_update: {hours_4_allow_update}")
-				str_hours_4_allow_update = ':'.join(str(hours_4_allow_update).split(':')[:2])
-				print(f"in string form: {str_hours_4_allow_update}")'''
 
 	ret_resp = mongoDb.updateUserPwd('user_test_1', '1234', 'new_pwd')
 	print(ret_resp)
