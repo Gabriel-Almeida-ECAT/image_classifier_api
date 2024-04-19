@@ -58,11 +58,11 @@ class user(Resource):
 		elif body_validation['validation']:
 			pwd = posted_data["password"]
 
-		auth_resp = mongoDb.authUser(user_id, pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 
 		num_tokens = mongoDb.getNumTokens(user_id)
 		return genResponse( 
@@ -82,11 +82,11 @@ class user(Resource):
 			pwd = posted_data["password"]
 			new_pwd = posted_data["new_password"]
 
-		auth_resp = mongoDb.authUser(user_id, pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 
 		ret_resp = mongoDb.updateUserPwd(user_id, pwd, new_pwd)
 
@@ -106,11 +106,11 @@ class user(Resource):
 		elif body_validation['validation']:
 			pwd = posted_data["password"]
 
-		auth_resp = mongoDb.authUser(user_id, pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 
 		ret_resp = mongoDb.deleteUser(user_id, pwd)
 
@@ -138,18 +138,18 @@ class classify(Resource):
 				ret_json={'msg': "Invalid Url"},
 				ret_status=415) # 415 Unsupported Media Type
 
-		auth_resp = mongoDb.authUser(user_id, pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authUser(user_id, pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 
 		elif (num_tokens := mongoDb.getNumTokens(user_id)) <= 0:
 			return genResponse(
 				ret_json={'msg': "Not enough tokens"},
 				ret_status=403) # 403 Forbidden
 
-		elif auth_resp['auth'] and num_tokens > 0:
+		elif auth_adm_resp['auth'] and num_tokens > 0:
 			cached_url_result = mongoDb.getCachedUrlResult(url)
 			
 			if cached_url_result is not None:
@@ -185,28 +185,34 @@ class classify(Resource):
 
 
 class refill(Resource):
-	def post(self):
+	def post(self, admin_id):
 		posted_data = request.get_json()
 
-		user_id = posted_data["username"]
-		adm_pwd = posted_data["adm_pwd"]
-		refill_amt = int(posted_data["refill"])
+		expected_content = ["username", "adm_password", "refill"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+
+		elif body_validation['validation']:
+			user_id = posted_data["username"]
+			adm_pwd = posted_data["adm_password"]
+			refill_amt = posted_data["refill"]
 
 		if not isinstance(refill_amt, int):
 			return genResponse(
-				ret_json={'msg': f"Error, invalid argument '{refill_amt}', expected integer."},
-				ret_status=304)
+				ret_json={'msg': f"Error: invalid argument \'{refill_amt}\', expected integer."},
+				ret_status=400)
 
 		elif not mongoDb.userExist(user_id):
 			return genResponse(
-				ret_json={'msg': f"Useramer {user_id} not found."},
+				ret_json={'msg': f"Useramer \'{user_id}\' not found."},
 				ret_status=400)
 
-		auth_resp_adm = authAdm(user_id, adm_pwd)
-		if not auth_resp_adm['auth']:
+		auth_adm_resp = mongoDb.authAdm(admin_id, adm_pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp_adm['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 
 		mongoDb.add2usrTokens(user_id, refill_amt)
 		return genResponse(
@@ -217,24 +223,22 @@ class refill(Resource):
 #create admin route: initial password, remoive cached, promote/demote admin
 class rootAdminInitialPassword(Resource):
 	def post(self):
-		new_pwd = posted_data["new_pwd"]
+		posted_data = request.get_json()
 
-		'''
-		!#!#!#!#!#!#!#!#!#!#!#!#!!$!$!$!$!$!$!$%!%!%!%!%!
-		CHECK IF THIS ERROR HANDLING WORKS
-		!#!#!#!#!#!#!#!#!#!#!#!#!!$!$!$!$!$!$!$%!%!%!%!%!
-		'''
-		print(new_pwd)
-		if not new_pwd:
-			return genResponse(
-				ret_json={'msg': "Missing argument."},
-				ret_status=400)
+		expected_content = ["new_pwd", "initial_password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
 
-		reponse = mongoDb.rootAdmFirstPwd(new_pwd)
+		elif body_validation['validation']:
+			new_pwd = posted_data["new_pwd"]
+			initial_pwd = posted_data["initial_password"]
+
+		response = mongoDb.rootAdmFirstPwd(new_pwd, initial_pwd)
 
 		return genResponse(
 			ret_json={'msg': response['msg']},
-			ret_status=reponse['resp_code'])
+			ret_status=response['resp_code'])
 
 
 class deleteCachedUrl(Resource):
@@ -243,11 +247,11 @@ class deleteCachedUrl(Resource):
 		adm_id = posted_data["adm_id"]
 		adm_pwd = posted_data["adm_pwd"]
 
-		resp_auth_adm = mongoDb.authAdm(adm_id, adm_pwd)
-		if not resp_auth_adm['auth']:
+		auth_adm_resp = mongoDb.authAdm(adm_id, adm_pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-					ret_json={'msg': resp_auth_adm['msg']},
-					ret_status=resp_auth_adm['resp_code'])
+					ret_json={'msg': auth_adm_resp['msg']},
+					ret_status=auth_adm_resp['resp_code'])
 
 		else:
 			dlt_resp = mongoDb.deleteCachedUrl(adm_id, adm_pwd)
@@ -260,13 +264,13 @@ class promote2adm(Resource):
 		usr_id = posted_data["usr_id"]
 		root_adm_pwd = posted_data["adm_pwd"]
 
-		auth_resp = authAdm('root_admin', root_adm_pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 		
-		elif auth_resp_adm['auth'] and not mongoDb.isAdm(usr_id):
+		elif auth_adm_resp['auth'] and not mongoDb.isAdm(usr_id):
 			resp = mongoDb.promote2adm(usr_id)
 			return genResponse(ret_json={'msg': resp['msg']},
 								ret_status=resp['resp_code'])
@@ -277,13 +281,13 @@ class demoteAdm(Resource):
 		usr_id = posted_data["usr_id"]
 		root_adm_pwd = posted_data["adm_pwd"]
 
-		auth_resp = authAdm('root_admin', root_adm_pwd)
-		if not auth_resp['auth']:
+		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)
+		if not auth_adm_resp['auth']:
 			return genResponse(
-				ret_json={'msg': auth_resp['err_msg']},
-				ret_status=auth_resp['resp_code'])
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
 		
-		elif auth_resp_adm['auth']:
+		elif auth_adm_resp['auth']:
 			resp = mongoDb.demoteAdm(usr_id)
 			return genResponse(ret_json={'msg': resp['msg']},
 								ret_status=resp['resp_code'])
@@ -291,9 +295,9 @@ class demoteAdm(Resource):
 
 api.add_resource(userCreate, '/user/create')
 api.add_resource(user, '/user/<string:user_id>')
-api.add_resource(classify, '/classify/')
-api.add_resource(refill, '/admin/refill/')
+api.add_resource(classify, '/classify')
 api.add_resource(rootAdminInitialPassword, '/admin/rootAdmInitialPassword')
+api.add_resource(refill, '/admin/<string:admin_id>/refill')
 api.add_resource(promote2adm, '/admin/promoteToAdmin/<string:usr_id>')
 api.add_resource(demoteAdm, '/admin/demoteFromAdmin/<string:usr_id>')
 api.add_resource(deleteCachedUrl, '/admin/deleteCachedUrl')

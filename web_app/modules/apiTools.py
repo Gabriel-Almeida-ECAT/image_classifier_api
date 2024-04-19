@@ -25,7 +25,7 @@ def validateBodyContent(body, expected_content):
 		return {'validation': True}
 	
 	elif len(missing_content) > 0:
-		missing_content_str = "Missing argument: " + ", ".join(body_validation['Missing'])
+		missing_content_str = "Missing arguments: " + ", ".join(missing_content)
 		return {'validation': False, 'msg': missing_content_str, 'missing': missing_content}
 	
 

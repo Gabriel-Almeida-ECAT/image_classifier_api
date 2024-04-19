@@ -113,17 +113,17 @@ class MongoDb:
 	
 
 	def isAdm(self, user_id):
-		if self.adm_col.find_one({"user_id": user_id}) is not None:
+		if self.admin_col.find_one({"user_id": user_id}) is not None:
 			return True
 		return False
 
 
 	def authAdm(self, user_id, adm_pwd):
-		is_adm = True if self.adm_col.find_one({"user_id": user_id}) is not None else False
+		is_adm = True if self.admin_col.find_one({"user_id": user_id}) is not None else False
 		if not is_adm:
 			return {'resp_code': 403, 'auth': False, 'err_msg': "User not registered as admin"}
 		
-		hs_stored_pwd = self.adm_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})["password"]
+		hs_stored_pwd = self.admin_col.find_one({"user_id": user_id}, {"_id": 0, "password": 1})["password"]
 		if hs_stored_pwd == admin_init_pwd:
 			return {'resp_code': 401, 'auth': False, 'err_msg': "Invalid: initial admin password"}
 
@@ -135,16 +135,16 @@ class MongoDb:
 
 
 	# meant only for root adm
-	def rootAdmFirstPwd(self, new_pwd):
-		stored_pwd = self.admin_col.find_one({"user_id": 'root_admin'}, {"_id": 0, "password": 1})
-		if stored_pwd == admin_init_pwd:
+	def rootAdmFirstPwd(self, new_pwd, initial_pwd):
+		intial_pwd = self.admin_col.find_one({"user_id": 'root_admin'}, {"_id": 0, "initial_pwd": 1})["initial_pwd"]
+		if intial_pwd and initial_pwd == admin_init_pwd:
 			hashed_pwd = bcrypt.hashpw(new_pwd.encode('utf8'), bcrypt.gensalt())
 			self.admin_col.update_one({"user_id": 'root_admin'},
-				{"$set": {"password": hashed_pwd}}
+				{"$set": {"password": hashed_pwd, "initial_pwd": False}, }
 			)
 			return {'resp_code': 200, 'msg': "Admin password updated successfully."}
 		else:
-			return {'resp_code': 403, 'msg': "Admin initial password already altered."}
+			return {'resp_code': 403, 'msg': "Admin initial password already altered or given password wrong."}
 
 
 	def promote2adm(self, user_id):
