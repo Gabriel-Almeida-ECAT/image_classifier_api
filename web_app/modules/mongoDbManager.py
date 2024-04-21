@@ -152,16 +152,16 @@ class MongoDb:
 			return {'resp_code': 400, 'msg': f"User {user_id} not found."}
 
 		else:
-			self.admin_col.insert_one({"user_id": 'user_id',
-										"usr_pwd": self.users_col.find_one({"user_id": user_id})["password"]
+			self.admin_col.insert_one({"user_id": user_id,
+										"password": self.users_col.find_one({"user_id": user_id})["password"]
 			})
 			return {'resp_code': 200, 'msg': f"User {user_id} promoted to admin successfully."}
 
 
 	def demoteAdm(self, user_id):
-		if not self.userExist(user_id):
-			return {'resp_code': 400, 'msg': f"User {user_id} not found."}
-
+		if user_id == 'root_admin':
+			return {'resp_code': 400, 'msg': f"Invalid action."}
+		
 		else:
 			self.admin_col.delete_one({"user_id": user_id})
 			return {'resp_code': 200, 'msg': f"Removed user '{user_id}' admin status successfully."}
@@ -185,7 +185,7 @@ class MongoDb:
 			return {'resp_code': 200, 'msg': f"Removed url '{url}' from cached urls."}
 
 		else:
-			return {'resp_code': 404, 'msg': f"Url passed not cached."}
+			return {'resp_code': 404, 'msg': f"Given url not cached."}
 
 
 

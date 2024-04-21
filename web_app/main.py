@@ -184,6 +184,85 @@ class classify(Resource):
 				ret_status=200)
 
 
+#create admin route: initial password, remoive cached, promote/demote admin
+class rootAdminInitialPassword(Resource):
+	def post(self):
+		posted_data = request.get_json()
+
+		expected_content = ["new_pwd", "initial_password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+
+		elif body_validation['validation']:
+			new_pwd = posted_data["new_pwd"]
+			initial_pwd = posted_data["initial_password"]
+
+		response = mongoDb.rootAdmFirstPwd(new_pwd, initial_pwd)
+
+		return genResponse(
+			ret_json={'msg': response['msg']},
+			ret_status=response['resp_code'])
+
+
+class promote2adm(Resource):
+	def post(self):
+		posted_data = request.get_json()
+
+		expected_content = ["username", "root_adm_password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+
+		elif body_validation['validation']:
+			usr_id = posted_data["username"]
+			root_adm_pwd = posted_data["root_adm_password"]
+
+		if mongoDb.isAdm(usr_id):
+			return genResponse(ret_json={'msg': f"User {usr_id} is already adm."},
+								ret_status=400)
+
+		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)
+		if not auth_adm_resp['auth']:
+			return genResponse(
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
+		
+		elif auth_adm_resp['auth']:
+			resp = mongoDb.promote2adm(usr_id)
+			return genResponse(ret_json={'msg': resp['msg']},
+								ret_status=resp['resp_code'])
+
+
+class demoteAdm(Resource):
+	def post(self):
+		posted_data = request.get_json()
+
+		expected_content = ["username", "root_adm_password"]
+		body_validation = validateBodyContent(posted_data, expected_content)
+		if not body_validation['validation']:
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400)
+
+		elif body_validation['validation']:
+			usr_id = posted_data["username"]
+			root_adm_pwd = posted_data["root_adm_password"]
+
+		if not mongoDb.isAdm(usr_id):
+			return genResponse(ret_json={'msg': f"User {usr_id} is not adm."},
+								ret_status=404)
+
+		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)		
+		if not auth_adm_resp['auth']:
+			return genResponse(
+				ret_json={'msg': auth_adm_resp['err_msg']},
+				ret_status=auth_adm_resp['resp_code'])
+
+		elif auth_adm_resp['auth']:
+			resp = mongoDb.demoteAdm(usr_id)
+			return genResponse(ret_json={'msg': resp['msg']},
+								ret_status=resp['resp_code'])
+
+
 class refill(Resource):
 	def post(self, admin_id):
 		posted_data = request.get_json()
@@ -191,7 +270,7 @@ class refill(Resource):
 		expected_content = ["username", "adm_password", "refill"]
 		body_validation = validateBodyContent(posted_data, expected_content)
 		if not body_validation['validation']:
-			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400)
 
 		elif body_validation['validation']:
 			user_id = posted_data["username"]
@@ -220,87 +299,39 @@ class refill(Resource):
 				ret_status=200)
 
 
-#create admin route: initial password, remoive cached, promote/demote admin
-class rootAdminInitialPassword(Resource):
-	def post(self):
+class deleteCachedUrl(Resource):
+	def post(self, admin_id):
 		posted_data = request.get_json()
 
-		expected_content = ["new_pwd", "initial_password"]
+		expected_content = ["url", "adm_password"]
 		body_validation = validateBodyContent(posted_data, expected_content)
 		if not body_validation['validation']:
-			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400) # 400 Bad Request
+			return genResponse(ret_json={'msg': body_validation['msg']},ret_status=400)
 
 		elif body_validation['validation']:
-			new_pwd = posted_data["new_pwd"]
-			initial_pwd = posted_data["initial_password"]
+			url = posted_data["url"]
+			adm_pwd = posted_data["adm_password"]
 
-		response = mongoDb.rootAdmFirstPwd(new_pwd, initial_pwd)
-
-		return genResponse(
-			ret_json={'msg': response['msg']},
-			ret_status=response['resp_code'])
-
-
-class deleteCachedUrl(Resource):
-	def post(self):
-		url = posted_data["url"]
-		adm_id = posted_data["adm_id"]
-		adm_pwd = posted_data["adm_pwd"]
-
-		auth_adm_resp = mongoDb.authAdm(adm_id, adm_pwd)
+		auth_adm_resp = mongoDb.authAdm(admin_id, adm_pwd)
 		if not auth_adm_resp['auth']:
 			return genResponse(
-					ret_json={'msg': auth_adm_resp['msg']},
+					ret_json={'msg': auth_adm_resp['err_msg']},
 					ret_status=auth_adm_resp['resp_code'])
 
 		else:
-			dlt_resp = mongoDb.deleteCachedUrl(adm_id, adm_pwd)
+			dlt_resp = mongoDb.deleteCachedUrl(url)
 			return genResponse(ret_json={'msg': dlt_resp['msg']},
 								ret_status=dlt_resp['resp_code'])
-
-
-class promote2adm(Resource):
-	def post(self):
-		usr_id = posted_data["usr_id"]
-		root_adm_pwd = posted_data["adm_pwd"]
-
-		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)
-		if not auth_adm_resp['auth']:
-			return genResponse(
-				ret_json={'msg': auth_adm_resp['err_msg']},
-				ret_status=auth_adm_resp['resp_code'])
-		
-		elif auth_adm_resp['auth'] and not mongoDb.isAdm(usr_id):
-			resp = mongoDb.promote2adm(usr_id)
-			return genResponse(ret_json={'msg': resp['msg']},
-								ret_status=resp['resp_code'])
-
-
-class demoteAdm(Resource):
-	def post(self):
-		usr_id = posted_data["usr_id"]
-		root_adm_pwd = posted_data["adm_pwd"]
-
-		auth_adm_resp = mongoDb.authAdm('root_admin', root_adm_pwd)
-		if not auth_adm_resp['auth']:
-			return genResponse(
-				ret_json={'msg': auth_adm_resp['err_msg']},
-				ret_status=auth_adm_resp['resp_code'])
-		
-		elif auth_adm_resp['auth']:
-			resp = mongoDb.demoteAdm(usr_id)
-			return genResponse(ret_json={'msg': resp['msg']},
-								ret_status=resp['resp_code'])
 
 
 api.add_resource(userCreate, '/user/create')
 api.add_resource(user, '/user/<string:user_id>')
 api.add_resource(classify, '/classify')
 api.add_resource(rootAdminInitialPassword, '/admin/rootAdmInitialPassword')
+api.add_resource(promote2adm, '/admin/promoteToAdmin')
+api.add_resource(demoteAdm, '/admin/demoteFromAdmin')
 api.add_resource(refill, '/admin/<string:admin_id>/refill')
-api.add_resource(promote2adm, '/admin/promoteToAdmin/<string:usr_id>')
-api.add_resource(demoteAdm, '/admin/demoteFromAdmin/<string:usr_id>')
-api.add_resource(deleteCachedUrl, '/admin/deleteCachedUrl')
+api.add_resource(deleteCachedUrl, '/admin/<string:admin_id>/deleteCachedUrl')
 
 
 if __name__ == '__main__':
