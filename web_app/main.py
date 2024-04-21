@@ -19,8 +19,8 @@ app = Flask(__name__)
 api = Api(app)
 
 
-#mongoDb = MongoDb("mongodb://db:27017") dockercompose
-mongoDb = MongoDb("mongodb://127.0.0.1:27017")
+mongoDb = MongoDb("mongodb://db:27017") #dockercompose
+#mongoDb = MongoDb("mongodb://127.0.0.1:27017") for test in local machine
 
 
 pretrained_model = InceptionV3(weights="imagenet")

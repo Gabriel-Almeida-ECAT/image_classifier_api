@@ -1,0 +1,294 @@
+{
+	"info": {
+		"_postman_id": "626d366e-cb7b-499e-8dc2-d1d6223f5f5d",
+		"name": "IMAGE CLASSIFIER_API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28837723"
+	},
+	"item": [
+		{
+			"name": "register user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_2\",\n    \"password\": \"new_123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/user/create",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"password\": \"new_123\",\n    \"new_password\": \"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/user/{{usr_id}}",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"{{usr_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete user",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_1\",\n    \"password\": \"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/user/{{usr_id}}",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"{{usr_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "check token user",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"password\": \"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/user/{{usr_id}}",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"{{usr_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "classify",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_2\",\n    \"password\": \"new_123\",\n    \"url\": \"https://www.shutterstock.com/image-photo/close-green-snake-thailand-260nw-1777849682.jpg\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/classify",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"classify"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "set admin initial password",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"new_pwd\": \"adm123\",\n    \"initial_password\": \"pwd1235\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/admin/rootAdmInitialPassword",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"admin",
+						"rootAdmInitialPassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "promote user to adm",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_1\",\n    \"root_adm_password\": \"adm123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/admin/promoteToAdmin",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"admin",
+						"promoteToAdmin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "demote user from adm",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_1\",\n    \"root_adm_password\": \"adm123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/admin/demoteFromAdmin",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"admin",
+						"demoteFromAdmin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refill user tokens",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"user_test_2\",\n    \"adm_password\": \"adm123\",\n    \"refill\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/admin/{{admin_id}}/refill",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"admin",
+						"{{admin_id}}",
+						"refill"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete cached url",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"url\": \"https://www.shutterstock.com/image-photo/close-green-snake-thailand-260nw-1777849682.jpg\",\n    \"adm_password\": \"123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/admin/{{usr_adm_id}}/deleteCachedUrl",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"admin",
+						"{{usr_adm_id}}",
+						"deleteCachedUrl"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
